@@ -1,6 +1,7 @@
 #ifndef PNM_H
 #define PNM_H
 #include <stdio.h>
+#include "img.h"
 
 /**
  * Codigos de error para biblioteca de entrada/salida imagees
@@ -43,36 +44,6 @@ typedef enum canal {
  * pixel es un entero sin signo de al menos 32 bits
  */
 typedef unsigned int Pixel;
-
-typedef struct image {
-    ImageType type;
-    int cols;
-    int rows;
-    int maxval;
-    Pixel* pixels;
-    int npixels;
-} Image;
-
-/**
- * Dados un cols y un rows, y una estructura de Image, reserva espacio en memoria para cols*rows pixels en la image.
- */
-int init_image(int cols, int rows, ImageType type, Image* pimg);
-
-int is_color(Image* img);
-
-void alloc_image(Image* pimg);
-
-void erase_image(Image* pimg);
-
-/**
- * Crea una image de mismos atributos que la original
- */
-int clone_image(const Image* source, Image* dest);
-
-/**
- * Libera la memoria asociada a los pixels de la image dada.
- */
-void destroy_image(Image* pimg);
 
 ErrorCode read_header(FILE* fimg, Image* pimg);
 

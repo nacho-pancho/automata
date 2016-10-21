@@ -1,25 +1,25 @@
 
 #ifndef DUDELIB_H
 #define DUDELIB_H
-#include "pnm.h"
-
 
 typedef unsigned short val_t;
 typedef int index_t;
 typedef unsigned long count_t;
 
-/** 2D Template */
-typedef struct {
-    index_t* is;
-    index_t* js;
-    unsigned int k;
-} Template;
+/**
+ * pixel es un entero sin signo de al menos 32 bits
+ */
+typedef unsigned int Pixel;
 
-/** Linear version of a template for faster access */
-typedef struct {
-    index_t* li;
-    unsigned int k;
-} LinearTemplate;
+typedef struct image {
+    int type;
+    int cols;
+    int rows;
+    int maxval;
+    Pixel* pixels;
+    int npixels;
+} Image;
+
 
 /** A basic matrix */
 typedef struct {
@@ -34,43 +34,45 @@ typedef struct {
     unsigned int n;
 } Vector;
 
-/**
- * Context realization
- */
-typedef struct {
-    val_t* values;
-    unsigned int k;
-} Context;
-
-/**
- * Strategy for mapping contexts
- */
-typedef void (*ContextMapper)(const Context* orig_ctx, Context* mapped_ctx);
-
 /*---------------------------------------------------------------------------------------*/
 /* FUNCTIONS */
 /*---------------------------------------------------------------------------------------*/
 
+/**
+ * Dados un cols y un rows, y una estructura de Image, reserva espacio en memoria para cols*rows pixels en la image.
+ */
+int init_image(int cols, int rows, int type, Image* pimg);
+
+int is_color(Image* img);
+
+void alloc_image(Image* pimg);
+
+void erase_image(Image* pimg);
+
+/**
+ * Crea una image de mismos atributos que la original
+ */
+void copy_image(Image* src, Image* dest);
+
+int clone_image(const Image* source, Image* dest);
+
+void decompose_image(const Image* I, Image* R, Image* G, Image* B);
+
+void compose_image(const Image* R, const Image* G, const Image* B, Image* I);
+
+/**
+ * Libera la memoria asociada a los pixels de la image dada.
+ */
+void destroy_image(Image* pimg);
+
 int get_pixel(const Image* pimg, int i, int j);
+
+int get_pixel_circular(const Image* pimg, int i, int j);
 
 int get_linear_pixel(const Image* pimg, int li);
 
 void set_pixel(Image* pimg, int i, int j, Pixel x);
 
 void set_linear_pixel(Image* pimg, int li, Pixel x);
-
-void read_template(const char* fname, Template* ptpl);
-
-void print_template(const Template* ptpl);
-
-void read_template_multi(const char* fname, Template** ptpls, int* ntemplates);
-
-Template* ini_template(Template* pt, int k);
-
-void destroy_template(Template* pt);
-
-Template* generate_random_template(int max_l1_radius, int k, Template* pt);
-
-void linearize_template(const Template* pt, int nrows, int ncols, const LinearTemplate* plt);
 
 #endif

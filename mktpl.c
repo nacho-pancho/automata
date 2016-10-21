@@ -2,35 +2,13 @@
 #include <stdlib.h>
 #include "pnm.h"
 #include "ascmat.h"
+#include "tpl.h"
 #include <ctype.h>
 #include <string.h>
 #include <math.h>
 #include <stdio.h>
 
 typedef int index_t;
-
-/** 2D Template */
-typedef struct {
-    index_t* is;
-    index_t* js;
-    unsigned int k;
-} Template;
-
-void read_template_multi(const char* fname, Template** ptpls, int* ntemplates);
-
-Template* ini_template(Template* pt, int k);
-
-void destroy_template(Template* pt);
-
-void print_template(const Template* ptpl);
-
-void dump_template(const Template* ptpl,FILE* ft);
-
-Template* generate_ball_template(int radius, int norm, Template* pt);
-
-Template* generate_random_template(int radius, int norm, int k, int sym, Template* pt);
-
-void symmetrize_template(const Template* in, Template* out);
 
 /*---------------------------------------------------------------------------------------*/
 /* MAIN */
@@ -76,11 +54,11 @@ int main (int argc, char *argv[]) {
         tplsize = intpl[0].k;
     } else {
       int par = atoi(tplfile);
-      if (par == 0) { // dense 
-	nin = nout = 1;
+      if (par == 0) { // dense
+  nin = nout = 1;
         intpl = (Template*) malloc(sizeof(Template));
-	ini_template(intpl,(2*maxradius+1)*(2*maxradius)-1);
-	generate_ball_template(maxradius,norm,intpl);	
+  ini_template(intpl,(2*maxradius+1)*(2*maxradius)-1);
+  generate_ball_template(maxradius,norm,intpl);
       } else {
         srand(par); // parameter is seed
         intpl = (Template*) malloc(nin*sizeof(Template));
@@ -88,7 +66,7 @@ int main (int argc, char *argv[]) {
         for (t = 0; t < nin ; t++) {
             ini_template(&intpl[t],tplsize);
             generate_random_template(maxradius,norm,tplsize,symmetric,&intpl[t]);
-	    //            print_template(&intpl[t]);
+      //            print_template(&intpl[t]);
         }
       }
     }
@@ -100,18 +78,18 @@ int main (int argc, char *argv[]) {
     if (symmetric) {
       printf("Symmetrizing\n");
         outtpl = (Template*) malloc(nin*sizeof(Template));
-	int t;
-	int maxk = 0;
+  int t;
+  int maxk = 0;
         for (t = 0; t < nin ; t++) {
-	  ini_template(&outtpl[t],4*tplsize);
-	  symmetrize_template(intpl+t,outtpl+t);
-	  //	  print_template(&outtpl[t]);
-	  if (maxk < outtpl[t].k) 
-	    maxk = outtpl[t].k;
-	}
+    ini_template(&outtpl[t],4*tplsize);
+    symmetrize_template(intpl+t,outtpl+t);
+    //    print_template(&outtpl[t]);
+    if (maxk < outtpl[t].k)
+      maxk = outtpl[t].k;
+  }
         for (t = 0; t < nin ; t++) {
-	  outtpl[t].k = maxk;
-	}
+    outtpl[t].k = maxk;
+  }
     }
     //
     // multiscale
@@ -119,28 +97,28 @@ int main (int argc, char *argv[]) {
     if (maxscale > 1) {
       printf("Scaling\n");
       if (outtpl != intpl) {
-	int t;
-	for (t=0; t < nin; t++) 
-	  destroy_template(intpl+t);
-	free(intpl);
-	intpl = outtpl;
+  int t;
+  for (t=0; t < nin; t++)
+    destroy_template(intpl+t);
+  free(intpl);
+  intpl = outtpl;
       }
       nout = nin*maxscale;
-      outtpl = (Template*) malloc(nout*sizeof(Template));	
+      outtpl = (Template*) malloc(nout*sizeof(Template));
       int t;
       for (t=0; t < nin; t++) {
-	int sc;
-	for (sc = 1; sc <= maxscale; sc++) {
-	  int tout = maxscale*t+(sc-1);
-	  printf("k=%d t=%d sc=%d tout=%d nout=%d\n",intpl[0].k,t,sc,tout,nout);
-	  ini_template(&outtpl[tout],intpl[t].k);
-	  int k;
-	  for (k = 0; k < intpl[t].k; k++) {
-	    outtpl[tout].is[k] = sc * intpl[t].is[k];
-	    outtpl[tout].js[k] = sc * intpl[t].js[k];	    
-	  }
-	}
-      }      
+  int sc;
+  for (sc = 1; sc <= maxscale; sc++) {
+    int tout = maxscale*t+(sc-1);
+    printf("k=%d t=%d sc=%d tout=%d nout=%d\n",intpl[0].k,t,sc,tout,nout);
+    ini_template(&outtpl[tout],intpl[t].k);
+    int k;
+    for (k = 0; k < intpl[t].k; k++) {
+      outtpl[tout].is[k] = sc * intpl[t].is[k];
+      outtpl[tout].js[k] = sc * intpl[t].js[k];
+    }
+  }
+      }
     }
     int t;
     for (t = 0; t < nout; ++t) {
@@ -156,7 +134,7 @@ int main (int argc, char *argv[]) {
     for (t = 0; t < nout ; t++) {
       dump_template(&outtpl[t],f);
       if (outtpl != intpl) {
-	destroy_template(outtpl+t);
+  destroy_template(outtpl+t);
       }
     }
     for (t = 0; t < nin ; t++) {
@@ -164,7 +142,7 @@ int main (int argc, char *argv[]) {
     }
     if (outtpl != intpl) free(outtpl);
     free(intpl);
-    if (outfile[0] != '-') 
+    if (outfile[0] != '-')
       fclose(f);
     return 0;
 }
@@ -227,7 +205,7 @@ void parse_options(int* pargc, char** pargv[]) {
             printf("tplsize=%d\n",tplsize);
             break;
         case 's':
-	    symmetric = 1;
+      symmetric = 1;
             printf("symmetric templates=true\n");
             break;
         case 'r':
@@ -254,221 +232,4 @@ void parse_options(int* pargc, char** pargv[]) {
 
 /*---------------------------------------------------------------------------------------*/
 
-Template* ini_template(Template* pt, int k) {
-    if (pt == NULL) {
-      pt = (Template*) calloc(sizeof(Template),1);
-    }
-    pt->k = k;
-    pt->is = (index_t*) calloc(sizeof(index_t),k);
-    pt->js = (index_t*) calloc(sizeof(index_t),k);
-    return pt;
-}
 
-/*---------------------------------------------------------------------------------------*/
-
-void destroy_template(Template* pt) {
-    if (pt == NULL) return;
-    pt->k = 0;
-    free(pt->is);
-    free(pt->js);
-}
-
-/*---------------------------------------------------------------------------------------*/
-
-Template* generate_ball_template(int radius, int norm, Template* pt) {
-  int i,j;
-  int k = 0;
-  for (i = -radius; i <= radius; i++) {
-    for (j = -radius; j <= radius; j++) {
-      if ((i==0) && (j==0)) continue;
-      double rad;
-      int ai = i >= 0 ? i : -i;
-      int aj = j >= 0 ? j : -j;
-      if (norm >= 1000) {
-	rad = ai > aj ? ai : aj;
-      } else if (norm == 1) {
-	rad = ai + aj;
-      } else {
-	rad = pow(pow((double)i,(double)norm) + pow((double)j,(double)norm),1.0/(double)norm);
-      }
-      if (rad <= radius) {
-	pt->is[k] = i;
-	pt->js[k++] = j;
-      }
-    }
-  }
-  pt->k = k;
-  return pt;
-}
-
-/*---------------------------------------------------------------------------------------*/
-
-Template* generate_random_template(int radius, int norm, int k, int sym, Template* pt) {
-    int r;
-    if (pt == NULL) {
-      pt = ini_template(NULL,sym? 4*k:k);
-    }
-    for (r=0 ; r<k ; r++) {
-        // this generates a sample within the linfinity ball
-        // 
-      int i,j;
-      if (!sym) {
-        i = (int)(2.*(double)radius*(double)rand()/(double)RAND_MAX - (double)radius+ 0.5);
-        j = (int)(2.*(double)radius*(double)rand()/(double)RAND_MAX - (double)radius+ 0.5);
-      } else {
-        i = (int)((double)radius*(double)rand()/(double)RAND_MAX+ 0.5);
-        j = (int)((double)radius*(double)rand()/(double)RAND_MAX+ 0.5);       
-      }
-	double rad;
-      int ai = i >= 0 ? i : -i;
-      int aj = j >= 0 ? j : -j;
-      if (norm >= 1000) {
-	rad = ai > aj ? ai : aj;
-      } else if (norm == 1) {
-	rad = ai + aj;
-      } else {
-	rad = pow(pow((double)i,(double)norm) + pow((double)j,(double)norm),1.0/(double)norm);
-      }
-	if ((rad == 0) || (rad > radius)) {
-            r--;
-            continue;
-        } 
-        // see if not already there
-        int r2 ;
-        for (r2 = 0; r2 < r; r2++) {
-            if ((i==pt->is[r2]) && (j==pt->js[r2])) {
-                break;
-            }
-        }
-        if (r2 < r) {
-            r--;
-            continue;
-        }
-        pt->is[r] = i;
-        pt->js[r] = j;
-    }
-    //
-    // symmetrize
-    //
-    return pt;
-}
-
-void symmetrize_template(const Template* in, Template* out) {
-  const int k = in->k;
-  if (out == NULL) {
-    out = ini_template(NULL,4*k);
-  }
-  int r, sk = k;
-  for (r=0 ; r<k ; r++) {
-    const int i = in->is[r];
-    const int j = in->js[r];
-    out->is[r] = i;
-    out->js[r] = j;
-    if ((i != 0) && (j != 0)) { // i != 0, j != 0
-      out->is[sk]   = -i;
-      out->js[sk++] =  j;
-      out->is[sk]   =  i;
-      out->js[sk++] = -j;
-    }
-    out->is[sk] = -i;
-    out->js[sk++] = -j;
-  }
-  out->k = sk;
-}
-
-/*---------------------------------------------------------------------------------------*/
-
-void read_template(const char* fname, Template* ptpl) {
-    double* tpldat  = 0;
-    unsigned nrows = 0;
-    unsigned ncols = 0;
-    int i;
-    read_ascii_matrix(fname,&nrows,&ncols,&tpldat);
-    printf("TEMPLATE (k=%d):\n",ncols);
-    print_ascii_matrix(nrows,ncols,tpldat);
-    ini_template(ptpl,ncols);
-    for (i = 0; i < ncols; i++) {
-        ptpl->is[i] = tpldat[i];
-        ptpl->js[i] = tpldat[ncols+i];
-    }
-    free(tpldat);
-}
-
-/*---------------------------------------------------------------------------------------*/
-
-void read_template_multi(const char* fname, Template** ptpls, int* pntpl) {
-    double* tpldat  = 0;
-    unsigned nrows = 0;
-    unsigned ncols = 0;
-    Template* tpls;
-    int i,t;
-    read_ascii_matrix(fname,&nrows,&ncols,&tpldat);
-    //print_ascii_matrix(nrows,ncols,tpldat);
-    int ntemplates = nrows / 2;
-    tpls = (Template*) malloc(sizeof(Template)*ntemplates);
-    for (t = 0; t < ntemplates; t++) {
-        printf("TEMPLATE %d (k=%d):\n",t,ncols);
-        ini_template(&tpls[t],ncols);
-        for (i = 0; i < ncols; i++) {
-            const int ii = tpls[t].is[i] = tpldat[2*t*ncols+i];
-            const int ji = tpls[t].js[i] = tpldat[(2*t+1)*ncols+i];
-	    if ((ii==0) && (ji==0)) {
-                tpls[t].k = i;
-                break;
-            }
-        }
-        print_template(&tpls[t]);
-    }
-    free(tpldat);
-    *ptpls = tpls;
-    *pntpl = ntemplates;
-}
-
-void dump_template(const Template* ptpl,FILE* ft) {
-    int k;
-    for (k = 0; k < ptpl->k; k++) {
-      fprintf(ft,"%3d ",ptpl->is[k]);
-    }
-    fputc('\n',ft);
-    for (k = 0; k < ptpl->k; k++) {
-      fprintf(ft,"%3d ",ptpl->js[k]);
-    }
-    fputc('\n',ft);
-}
-
-void print_template(const Template* ptpl) {
-    int min_i = 10000,min_j = 10000, max_i=-10000, max_j=-10000;
-    int k,r,l;
-    for (k = 0; k < ptpl->k; k++) {
-        if (ptpl->is[k] < min_i) min_i = ptpl->is[k];
-        if (ptpl->is[k] > max_i) max_i = ptpl->is[k];
-        if (ptpl->js[k] < min_j) min_j = ptpl->js[k];
-        if (ptpl->js[k] > max_j) max_j = ptpl->js[k];
-    }
-    int a = max_i - min_i;
-    int b = max_j - min_j;
-    printf("    |");
-    for (r = 0; r <= b; r++) {
-        printf(" %2d ",r+min_j);
-    }
-    printf("\n----+");
-    for (r = 0; r <= b; r++) {
-        printf("----");
-    }
-    putchar('\n');
-    for (k = 0; k <= a; k++) {
-        printf(" %2d |",min_i+k);
-        for (r = 0; r <= b; r++) {
-            for (l=0; l < ptpl->k; l++) {
-                if ((ptpl->is[l] == (min_i+k)) && (ptpl->js[l] == (min_j+r))) {
-                    printf(" %2d ",l);
-                    break;
-                }
-            }
-            if (l == ptpl->k)
-                printf("    ");
-        }
-        putchar('\n');
-    }
-
-}

@@ -5,7 +5,7 @@ else
 CFLAGS  := -pg -Wall -O3 -msse3
 endif
 
-OBJECTS :=  img.o pnm.o  ascmat.o galois.o
+OBJECTS :=  img.o context.o tpl.o pnm.o  ascmat.o galois.o
 INCFLAGS = -I../dist
 LIBS    := -lm
 TARGETS := arte mktpl
@@ -21,6 +21,6 @@ clean:
 arte: arte.o $(OBJECTS)
 	cc -o $@ $< $(OBJECTS) $(LDFLAGS) $(LIBS)
 
-mktpl: mktpl.o pnm.o ascmat.o
-	cc -o $@ $< pnm.o ascmat.o $(LDFLAGS) $(LIBS)
+mktpl: mktpl.o $(OBJECTS)
+	cc -o $@ $< $(OBJECTS) $(LDFLAGS) $(LIBS)
 

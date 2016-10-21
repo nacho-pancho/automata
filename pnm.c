@@ -9,51 +9,6 @@ const char* error_message(ErrorCode c) {
     return error_messages[c];
 }
 
-int is_color(Image* img) {
-    return (img->type == COLOR_ASC) || (img->type == COLOR_BIN);
-}
-
-void alloc_image(Image* pimg) {
-    if (pimg->rows*pimg->cols > 0) {
-        pimg->pixels = (Pixel*) malloc(pimg->cols*pimg->rows*sizeof(Pixel));
-    } else{
-        pimg->pixels = 0;
-    }
-}
-/*
- * TIEMPOS:
- *   IMPLEMENTAR image.h + image.c : 1:00
- *   DEPURAR image.h + image.c     : 0:40
- */
-int init_image(int cols, int rows, ImageType type, Image* pimg) {
-    if (rows*cols > 0) {
-        pimg->pixels = (Pixel*) malloc(cols*rows*sizeof(Pixel));
-        pimg->cols = cols;
-        pimg->rows = rows;
-        pimg->npixels = cols*rows;
-        pimg->type = type;
-	pimg->maxval = type == 4 ? 1 : 255;
-        return (!pimg)? 1: 0;
-    }
-    return 1;
-}
-
-void erase_image(Image* pimg) {
-    memset(pimg->pixels,sizeof(Pixel),pimg->rows*pimg->cols);
-}
-
-int clone_image(const Image* po, Image* pd) {
-    pd->maxval = po->maxval;
-    return init_image(po->cols,po->rows,po->type,pd);
-}
-
-
-void destroy_image(Image* pimg) {
-    free(pimg->pixels);
-    pimg->cols = 0;
-    pimg->rows = 0;
-    pimg->pixels = NULL;
-}
 
 static ErrorCode read_data_p2(FILE* fimg, Image* pimg);
 static ErrorCode read_data_p4(FILE* fimg, Image* pimg);
@@ -124,13 +79,13 @@ ErrorCode read_data_p4(FILE* fimg, Image* pimg) {
       int j;
       short r = 0;
       for (j = 0; j < n; ++j, ++li) {
-	if (!mask) {
-	  r = fgetc(fimg); 
-	  mask = 0x80;
-	  if (r < 0) return PNM_INVALID_DATA;
-	}
+  if (!mask) {
+    r = fgetc(fimg);
+    mask = 0x80;
+    if (r < 0) return PNM_INVALID_DATA;
+  }
         pimg->pixels[li] = (r & mask) ? 1 : 0;
-	mask >>= 1;
+  mask >>= 1;
       }
     }
     if (li < n)
@@ -227,7 +182,7 @@ ErrorCode write_image(const Image* pimg, const char* path) {
     /* encabezado */
     if (pimg->type != 4)
       fprintf(fimg,"P%c %d %d\n%d\n",pimg->type+'0', pimg->cols, pimg->rows, pimg->maxval);
-    else 
+    else
       fprintf(fimg,"P%c %d %d\n",pimg->type+'0', pimg->cols, pimg->rows);
     switch (pimg->type) {
     case GRISES_ASC:
@@ -277,17 +232,17 @@ ErrorCode write_data_p4(const Image* pimg, FILE* fimg) {
       unsigned short word = 0x00;
       for (j = 0; j < cols; ++j,++pixels) {
         unsigned short p = *pixels;
-	if (p) 
-	  word |= mask;
-	mask >>=1;
-	if (!mask) {
-	  fputc(word, fimg);
-	  mask = 0x80;
-	  word = 0;
-	}
+  if (p)
+    word |= mask;
+  mask >>=1;
+  if (!mask) {
+    fputc(word, fimg);
+    mask = 0x80;
+    word = 0;
+  }
       }
       if ((mask > 0) && (mask != 0x80))
-          fputc(word, fimg);      
+          fputc(word, fimg);
     }
     return PNM_OK;
 }
