@@ -1,8 +1,8 @@
 
 ifdef DEBUG
-CFLAGS  := -g -Wall -O0
+CFLAGS  := -g -Wall -O0 --std=c99
 else
-CFLAGS  := -pg -Wall -O3 -msse3
+CFLAGS  := -pg -Wall -O3 -msse3 --std=c99
 endif
 
 OBJECTS :=  img.o context.o tpl.o pnm.o  ascmat.o galois.o

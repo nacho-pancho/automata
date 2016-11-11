@@ -42,6 +42,11 @@ int init = 0; // random
 
 void parse_options(int* pargc, char** pargv[]);
 
+void mix_grayscale(const Image* A,  const Image* B, Image* mix) {
+}
+void mix_and_compose_color(const Image* Ar, const Image* Ag, const Image* Ab,  const Image* Br, const Image* Bg, const Image* Bb, Image* mix) {
+}
+
 int main(int argc, char** argv) {
   FILE* fimg;
   Image I;
@@ -93,9 +98,10 @@ int main(int argc, char** argv) {
     //
     // grayscale image
     //
-    Image S0, S1;
+    Image S0, S1, O;
     clone_image(&I,&S0);
     clone_image(&I,&S1);
+    clone_image(&I,&O);
     const int maxplane = 8;
     if (init == 0) {
       for (int i = 0, li = 0; i < rows; i++) {
@@ -116,7 +122,12 @@ int main(int argc, char** argv) {
       snprintf(ofname,128,ofbasename,e);
       if (((movie>0) && (e % movie==0)) || (e==(epochs-1)) ) {
         fprintf(stdout,"-epoch %d output %s maxval %d\n",e,ofname,maxx);
-        write_image(&S1,ofname);
+        if (!mix) {
+          write_image(&S1,ofname);
+        } else {
+	  mix_grayscale(&S1,&I,&O);
+          write_image(&S1,ofname);
+        }
       }
       // circular buffer: swap prev and curr states
       Pixel* aux = S1.pixels;
@@ -124,6 +135,7 @@ int main(int argc, char** argv) {
       S0.pixels = aux;
     }
     fprintf(stdout,"cleanup.\n");
+    destroy_image(&O);
     destroy_image(&S1);
     destroy_image(&S0);
   } else {
@@ -184,7 +196,11 @@ int main(int argc, char** argv) {
       snprintf(ofname,128,ofbasename,e);
       if (((movie > 0) && (e % movie == 0)) || (e==(epochs-1)) ) {
         fprintf(stdout,"-epoch %d output %s maxval %d\n",e,ofname,maxx);
-        compose_image(&S1r,&S1g,&S1b,&O);
+        if (mix) {
+          compose_image(&S1r,&S1g,&S1b,&O);
+        } else {
+          mix_and_compose_color(&Ir,&Ig,&Ib,&S1r,&S1g,&S1b,&O);
+        }
         O.maxval = maxx;
         write_image(&O,ofname);
       }
