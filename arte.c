@@ -6,7 +6,7 @@
 #include "context.h"
 
 const char * ifname = "camera.pgm";
-const char * ofbasename = "arte2_%03d.pgm";
+const char * ofbasename = "automata_%03d.ppm";
 
 typedef Pixel (*rule_t)(Image* img, Image* S0,Image* S1);
 
@@ -215,6 +215,10 @@ int main(int argc, char** argv) {
 }
 
 
+const const char* rule_help[];
+
+void usage();
+
 void parse_options(int* pargc, char** pargv[]) {
     int argc = *pargc;
     char** argv = *pargv;
@@ -298,14 +302,56 @@ void parse_options(int* pargc, char** pargv[]) {
                 mix = atoi((++argv)[0]);
             printf("mix=%d\n",mix);
             break;
+        case 'h':
+	  usage();
+	  exit(0);
+        case 'H':
+	  {
+	    int i = 0;
+	    printf("HELP ON RULES:\n==============\n");
+	    while (rule_help[i]) {
+	      printf("\nRULE %d:\n%s\n",i,rule_help[i]);
+	      i++;
+	    }
+	    exit(0);
+	  }
+	  
+            break;
         default:
             printf("Unknown option %s\n",argv[0]);
+	    usage(); exit(1);
         }
     }
     *pargc = argc;
     *pargv = argv;
 }
 
+void usage() {
+  fputs("Usage: arte [options] input_image output_image \n\
+\t-m 0,1 Movie mode. 1 means all epochs will be saved as intermediate images (default 0)\n\
+\t-e nnn Number of epochs to run the algorithm (default 1).\n\
+\t-i 0,1 Initialization mode. 0= Bernoulli, 1=Input image (default 0)\n\
+\t-q nnn Number of least significant bits to discard from input image (default 0) \n\
+\t-r nnn Rule to use. See -H for description of the rules. (default 1)\n\
+\t-t 0.nnn Bernoulli parameter for sampling initial state. (default 0.95) \n\
+\t-x 0,1 If 1, final state is mixed with input image to produce output (default 0)\n\
+\t-H Print help on rules.\n\
+\t-R n Radius in pixels of template, used for ball-shaped templates. (default 7) \n\
+\t-T tpl_file Template file used to define neighborhood of pixels. (default template.asc)\n\
+output_image: if ommited, default output file name is automata_%03d.pnm\n\
+",stderr);
+}
+
+static const char rule0_help[] =
+  " Basic 3 pixel binary automata with rule defined by pixel value. \
+  Each row in the output image corresponds to an iteration of the \
+  automata. A pixel x in the new row is given as a function \
+  of its NW, N and NE neighbors taken as boolean values(0 if exactly 0 or 1 otherwise) \
+  the function is called a RULE. For 3 bits there are 2^2^3=256 possible functions (called rules) \
+  This version uses the value of the input image at the index of the rule to be used to compute x in the output image \
+  The functions are indexed lexicographically, using the value of (0,0,0) as the first letter, \
+  (0,0,1) as the second, etc. \
+";
 //
 // basic 3 bit rule, rule defined by image
 //
@@ -332,6 +378,13 @@ Pixel rule0(Image* img, Image* S0, Image* S1) {
   return maxx;
 }
 
+static const char rule1_help[] =
+" \
+This applies rule 0 to each bit plane in the input image. \
+The algorithm is applied on each bit plane separately, and then \
+the resulting image is combined to form an n-bit image corresponding to \
+the bit depth of the original input. \
+";
 //
 // rule applied on each bit plane
 //
@@ -374,6 +427,13 @@ Pixel rule1(Image* img, Image* S0, Image* S1) {
 //
 // same as rule1 but uses horizontal gradient of image as rule
 //
+static const char rule2_help[] = 
+"\
+Same as rule 1 but the rule index is not taken from the pixel value at the position \
+of x in the input image, but by the absolute value of the horizontal gradient of the input \
+image at that point. The idea is to generate \"interesting\" rules around the borders \
+of the input image. \
+";
 Pixel rule2(Image* img, Image* S0, Image* S1) {
   const int cols = img->cols;
   const int rows = img->rows;
@@ -402,6 +462,13 @@ Pixel rule2(Image* img, Image* S0, Image* S1) {
   return maxx;
 }
 
+static const char rule3_help[] =
+"\
+This is an attempt at a continous 3 pixel rule such as rule 0. \
+The idea in this case is that the output of the rule is used to either increment \
+or decrement the pixel intensity in the output image instead of setting its value \
+to 0 or 1. \
+";
 //
 // first attempt at continuos rule
 //
@@ -430,6 +497,11 @@ Pixel rule3(Image* img, Image* S0, Image* S1) {
   return maxx;
 }
 
+static const char rule4_help[] =
+"\
+This rule is the same as rule 3 but, instead of decrementing or incrementing \
+The new pixel, it divides or multiplies it by two. \
+";
 //
 // another continuous rule, quite crazy
 //
@@ -454,6 +526,19 @@ Pixel rule4(Image* img, Image* S0, Image* S1) {
   return maxx;
 }
 
+static const char rule5_help[] =
+"\
+Conway's game of life modulated by input image. \
+This is a simple variant of Conway's game where \
+the previous state, given by image S0, is combined \
+with the input image to yield the new state S1. \
+While Conway's game states that a pixel x will be born \
+survive or die depending on the number of live neighbors \
+in its 8-pixel vicinity, this version also considers \
+the pixel corresponding to x in the input image as part of \
+that neighborhood. The input image pixel is considered 0 \
+if < 128 and 1 otherwise. \
+";
 //
 // Conway's game of life modulated by image
 //
@@ -472,7 +557,7 @@ Pixel rule5(Image* img, Image* S0, Image* S1) {
   const int xne = get_pixel(S0,i-1,j+1) != 0;
   const int xsw = get_pixel(S0,i+1,j-1) != 0;
   const int xse = get_pixel(S0,i+1,j+1) != 0;
-  const int yc = get_pixel(img,i  ,j  ) > 128;
+  const int yc = get_pixel(img,i  ,j  ) >= 128;
   int n = xw + xe + xn + xs + xnw + xne + xsw + xse + yc;
   int newx = xc ? 1: 0;
   if ((n < 2) || (n > 3)) {
@@ -487,6 +572,15 @@ Pixel rule5(Image* img, Image* S0, Image* S1) {
   return maxx;
 }
 
+static const char rule6_help[] =
+"\
+This is the bitplane-wise version of rule 6, just as rule 1 is \
+the bitplane version of rule 0. Instead of converting the input \
+image pixels to binary by thresholding and producing a binary image, \
+each bit plane of the input image and the state of the algorithm \
+are processed independently as binary images and then recombined \
+to form an n-bit image (where n is the bit depth of the input image). \
+";
 //
 // bitplane version of rule 5, Conway
 //
@@ -526,6 +620,14 @@ Pixel rule6(Image* img, Image* S0, Image* S1) {
   return maxx;
 }
 
+static const char rule7_help[] =
+"\
+This one also creates a bitplane-wise Conway game but \
+instead of considering each bit plane of the input image as \
+input to the evolution of the corresponding plane in the state \
+of the automata, the grayscale value of the input image pixel \
+is used to modulate Conway's rule. \
+";
 //
 // 8-neighbor bit-planed Conway
 //
@@ -565,6 +667,8 @@ Pixel rule7(Image* img, Image* S0, Image* S1) {
   return maxx;
 }
 
+static const char rule8_help[] = "Pending.";
+
 Pixel rule8(Image* img, Image* S0, Image* S1) {
   const int cols = img->cols;
   const int rows = img->rows;
@@ -597,6 +701,8 @@ Pixel rule8(Image* img, Image* S0, Image* S1) {
   return maxx;
 }
 
+static const char galois1_help[] = "Galois rule v1. Pending.";
+
 Pixel galois1(Image* I, Image* S0, Image* S1) {
   fprintf(stdout,"Galois.");
   const int cols = I->cols;
@@ -618,6 +724,8 @@ Pixel galois1(Image* I, Image* S0, Image* S1) {
   return maxx;
 }
 
+
+static const char galois2_help[] = "Galois rule v2. Pending.";
 
 Pixel galois2(Image* I, Image* S0, Image* S1) {
   fprintf(stdout,"Galois II");
@@ -641,6 +749,7 @@ Pixel galois2(Image* I, Image* S0, Image* S1) {
   return maxx;
 }
 
+static const char fungus1_help[] = "Fungus rule v1. Pending.";
 
 Pixel fungus1(Image* I, Image* S0, Image* S1) {
   fprintf(stdout,"Fungus I");
@@ -678,4 +787,7 @@ Pixel fungus1(Image* I, Image* S0, Image* S1) {
   return maxx;
 }
 
-rule_t rules[] = {rule0, rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, galois1, galois2,fungus1};
+rule_t rules[] = {rule0, rule1, rule2, rule3, rule4, rule5, rule6, rule7, rule8, galois1, galois2,fungus1,0};
+
+ const char *rule_help[] = { rule0_help, rule1_help, rule2_help, rule3_help, rule4_help, rule5_help, rule6_help, rule7_help, rule8_help, galois1_help, galois2_help, fungus1_help, 0};
+
