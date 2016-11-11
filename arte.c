@@ -211,7 +211,7 @@ int main(int argc, char** argv) {
       snprintf(ofname,128,ofbasename,e);
       if (((movie > 0) && (e % movie == 0)) || (e==(epochs-1)) ) {
         fprintf(stdout,"-epoch %d output %s maxval %d\n",e,ofname,maxx);
-        if (mix) {
+        if (!mix) {
           compose_image(&S1r,&S1g,&S1b,&O);
         } else {
           mix_and_compose_color(&Ir,&Ig,&Ib,&S1r,&S1g,&S1b,&O);
