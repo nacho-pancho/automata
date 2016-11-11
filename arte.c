@@ -43,8 +43,23 @@ int init = 0; // random
 void parse_options(int* pargc, char** pargv[]);
 
 void mix_grayscale(const Image* A,  const Image* B, Image* mix) {
+  const int cols = A->cols;
+  const int rows = A->rows;
+  const unsigned n = cols*rows;
+  for (unsigned li = 0; li < n; ++li) {
+    mix->pixels[li] = B->pixels[li]*A->pixels[li]/256;
+  }
 }
 void mix_and_compose_color(const Image* Ar, const Image* Ag, const Image* Ab,  const Image* Br, const Image* Bg, const Image* Bb, Image* mix) {
+  const int cols = Ar->cols;
+  const int rows = Ar->rows;
+  const unsigned n = cols*rows;
+  for (unsigned li = 0; li < n; ++li) {
+    const unsigned r = Br->pixels[li]*Ar->pixels[li]/256;
+    const unsigned g = Bg->pixels[li]*Ag->pixels[li]/256;
+    const unsigned b = Bb->pixels[li]*Ab->pixels[li]/256;
+    mix->pixels[li] = (r<<16) | (g << 8) | b;
+  }
 }
 
 int main(int argc, char** argv) {
@@ -126,7 +141,7 @@ int main(int argc, char** argv) {
           write_image(&S1,ofname);
         } else {
 	  mix_grayscale(&S1,&I,&O);
-          write_image(&S1,ofname);
+          write_image(&O,ofname);
         }
       }
       // circular buffer: swap prev and curr states
