@@ -698,7 +698,7 @@ Pixel rule7(Image* img, Image* S0, Image* S1) {
   return maxx;
 }
 
-static const char rule8_help[] = "Pending.";
+static const char rule8_help[] = "I really dont remember the logic behind this one.";
 
 Pixel rule8(Image* img, Image* S0, Image* S1) {
   const int cols = img->cols;
@@ -732,7 +732,11 @@ Pixel rule8(Image* img, Image* S0, Image* S1) {
   return maxx;
 }
 
-static const char galois1_help[] = "Galois rule v1. Pending.";
+static const char galois1_help[] = 
+"Galois rule v1.\
+The next value of a given pixel in the state of the automata\
+is the xor of its 4 neighbors.\
+";
 
 Pixel galois1(Image* I, Image* S0, Image* S1) {
   fprintf(stdout,"Galois.");
@@ -756,7 +760,14 @@ Pixel galois1(Image* I, Image* S0, Image* S1) {
 }
 
 
-static const char galois2_help[] = "Galois rule v2. Pending.";
+static const char galois2_help[] = 
+"\
+Galois rule v2.\
+The next value of a given pixel x in the state image is.\
+given by the Laplacian image operator \
+(xnew = 4 * x - n -e -w -s)\
+with the sum and product defined over the Galois Field F_256\
+";
 
 Pixel galois2(Image* I, Image* S0, Image* S1) {
   fprintf(stdout,"Galois II");
@@ -780,7 +791,20 @@ Pixel galois2(Image* I, Image* S0, Image* S1) {
   return maxx;
 }
 
-static const char fungus1_help[] = "Fungus rule v1. Pending.";
+static const char fungus1_help[] = 
+"\
+Fungus rule v1. Continuous attempt at Conway's rule.\
+The next value of a given pixel in the state\
+is incremented, untouched or decremented depending on\
+the population of its four neighbors and the center\
+value of the input image as follows.\
+The population p is simply the average of the grayscala value\
+of the four neighbors. Then three threholds t0,t1 and t2\
+are defined as 30%, 40% and 60% of the value of the center pixel\
+of the input image. If p < t0 or p > t2, the value of pixel is decreased.\
+If p is between t0 and t1 the value stays the same, and if it is between \
+t1 and t2 it is increased.  \
+";
 
 Pixel fungus1(Image* I, Image* S0, Image* S1) {
   fprintf(stdout,"Fungus I");
@@ -793,10 +817,10 @@ Pixel fungus1(Image* I, Image* S0, Image* S1) {
       const gf_t se = get_pixel_circular(S0,i,j+1);
       const gf_t sn = get_pixel_circular(S0,i-1,j);
       const gf_t ss = get_pixel_circular(S0,i+1,j);
-      const gf_t snw = get_pixel_circular(S0,i-1,j-1);
-      const gf_t sne = get_pixel_circular(S0,i-1,j+1);
-      const gf_t ssw = get_pixel_circular(S0,i+1,j-1);
-      const gf_t sse = get_pixel_circular(S0,i+1,j+1);
+      //const gf_t snw = get_pixel_circular(S0,i-1,j-1);
+      //const gf_t sne = get_pixel_circular(S0,i-1,j+1);
+      //const gf_t ssw = get_pixel_circular(S0,i+1,j-1);
+      //const gf_t sse = get_pixel_circular(S0,i+1,j+1);
       const gf_t ic = get_pixel_circular(I,i,j);
       //int n = 6;
       //int population = sw + se + sn + ss + (snw + sne + ssw + sse)/2;
@@ -806,7 +830,6 @@ Pixel fungus1(Image* I, Image* S0, Image* S1) {
       const int t2 = ic*n*0.6;
       const int t1 = ic*n*0.4;
       const int t0 = ic*n*0.3;
-      // rule is Laplacian operator in Galois Field
       int newx = get_pixel_circular(S0,i,j);
       if (newx > 0 && population > t2) newx--;
       else if (newx > 0 && population < t0) newx--;
