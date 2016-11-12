@@ -46,7 +46,7 @@ int is_color(Image* img) {
 /*---------------------------------------------------------------------------------------*/
 
 void erase_image(Image* pimg) {
-    memset(pimg->pixels,sizeof(Pixel),pimg->rows*pimg->cols);
+    memset(pimg->pixels,0,sizeof(Pixel)*pimg->rows*pimg->cols);
 }
 
 

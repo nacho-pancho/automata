@@ -118,16 +118,23 @@ int main(int argc, char** argv) {
     clone_image(&I,&S1);
     clone_image(&I,&O);
     const int maxplane = 8;
-    if (init == 0) {
+    if (init ==  0) {
       for (int i = 0, li = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++,li++) {
           for (int p = 0; p < maxplane; p++) {
-            int t = ((double)rand()/(double)RAND_MAX) > thres;
+            unsigned t = ((double)rand()/(double)RAND_MAX) > thres ? 1:0;
             S0.pixels[li] |=  (t << p);
           }
         }
       }
-    } else {
+    } else if (init ==  2) {
+      for (int i = 0, li = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++,li++) {
+            unsigned t = ((double)rand()/(double)RAND_MAX) > thres ? 1:0;
+            S0.pixels[li] = t* I.pixels[li];
+          }
+        }
+    }  else {
       copy_image(&I,&S0);
     }
     rule_t rule = rules[ruleno];
@@ -184,12 +191,15 @@ int main(int argc, char** argv) {
     const int maxplane = 8;
     if (init == 0) {
       for (int li = 0; li < npixels; li++) {
+          S0r.pixels[li] = 0;
+          S0g.pixels[li] = 0;
+          S0b.pixels[li] = 0;
           for (int p = 0; p < maxplane; p++) {
-            int t = ((double)rand()/(double)RAND_MAX) > thres;
+            int t = ((double)rand()/(double)RAND_MAX) > thres ? 1 : 0;
             S0r.pixels[li] |=  (t << p);
-             t = ((double)rand()/(double)RAND_MAX) > thres;
+             t = ((double)rand()/(double)RAND_MAX) > thres ? 1: 0;
             S0g.pixels[li] |=  (t << p);
-             t = ((double)rand()/(double)RAND_MAX) > thres;
+             t = ((double)rand()/(double)RAND_MAX) > thres ? 1: 0;
             S0b.pixels[li] |=  (t << p);
         }
       }
@@ -202,11 +212,11 @@ int main(int argc, char** argv) {
     rule_t rule = rules[ruleno];
     unsigned maxx = 0;
     for (int e = 0; e < epochs; e++) {
-      const int maxr = rule(&Ir,&S0r,&S1r);
+      const unsigned maxr = rule(&Ir,&S0r,&S1r);
       if (maxr > maxx) maxx = maxr;
-      const int maxg = rule(&Ig,&S0g,&S1g);
+      const unsigned maxg = rule(&Ig,&S0g,&S1g);
       if (maxg > maxx) maxx = maxg;
-      const int maxb = rule(&Ib,&S0b,&S1b);
+      const unsigned maxb = rule(&Ib,&S0b,&S1b);
       if (maxb > maxx) maxx = maxb;
       snprintf(ofname,128,ofbasename,e);
       if (((movie > 0) && (e % movie == 0)) || (e==(epochs-1)) ) {
@@ -807,7 +817,6 @@ t1 and t2 it is increased.  \
 ";
 
 Pixel fungus1(Image* I, Image* S0, Image* S1) {
-  fprintf(stdout,"Fungus I");
   const int cols = I->cols;
   const int rows = I->rows;
   int maxx = 0;
@@ -831,9 +840,9 @@ Pixel fungus1(Image* I, Image* S0, Image* S1) {
       const int t1 = ic*n*0.4;
       const int t0 = ic*n*0.3;
       int newx = get_pixel_circular(S0,i,j);
-      if (newx > 0 && population > t2) newx--;
-      else if (newx > 0 && population < t0) newx--;
-      else if (newx < 255 && population > t1) newx++;
+      if (newx > 0 && population > t2) newx >>= 1;
+      else if (newx > 0 && population < t0) newx >>= 1;
+      else if (newx < 127 && population > t1) newx <<=1;
       set_pixel(S1,i,j,newx);
       if (newx > maxx) maxx = newx;
     }
